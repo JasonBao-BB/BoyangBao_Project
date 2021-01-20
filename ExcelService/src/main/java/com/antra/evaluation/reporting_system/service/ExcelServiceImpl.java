@@ -66,7 +66,7 @@ public class ExcelServiceImpl implements ExcelService {
     @Override
     public ExcelFile generateFile(ExcelRequest request, boolean multisheet) {
         ExcelFile excelFile = new ExcelFile();
-        excelFile.setFileId("EXCEL-"+UUID.randomUUID().toString());
+        excelFile.setFileId("Excel-"+UUID.randomUUID().toString());
         ExcelData data = new ExcelData();
         data.setTitle(request.getDescription());
         data.setFileId(excelFile.getFileId());
@@ -93,13 +93,15 @@ public class ExcelServiceImpl implements ExcelService {
             throw new FileGenerationException(e);
         }
         //Convert ExcelFile object into File object
+        //Save it to the S3 Bucket
         File temp = new File(excelFile.getFileLocation());
-//        System.out.println(temp.getName());
-        System.out.println("excel");
-        excelRepository.save(excelFile);
-
         s3Client.putObject(s3Bucket, excelFile.getFileId(), temp);
-//        excelRepository.saveFile(fileInfo);
+
+        //在这里把FileLocation变成了S3
+        excelFile.setFileLocation(String.join("/",s3Bucket,excelFile.getFileId()));
+        System.out.println("Excel_经过更改后的FileLocation:"+excelFile.getFileLocation());
+
+        excelRepository.save(excelFile);
         log.debug("Excel File Generated : {}", excelFile);
         return excelFile;
     }

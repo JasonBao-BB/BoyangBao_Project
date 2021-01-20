@@ -14,12 +14,16 @@ public class SNSServiceImpl implements SNSService {
 
     @Value("${app.aws.sns.topic}")
     private String snsTopic;
-
+    /*
+    * Dependency Injection a NotificationMessagingTemplate
+    * */
     @Autowired
     public SNSServiceImpl(AmazonSNS amazonSns) {
         this.notificationMessagingTemplate = new NotificationMessagingTemplate(amazonSns);
     }
-
+    /*
+    * Send notification
+    * */
     private void send(Object message) {
         this.notificationMessagingTemplate.sendNotification(snsTopic, message, null);
     }

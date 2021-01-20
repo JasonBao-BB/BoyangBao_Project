@@ -25,9 +25,23 @@ public class PDFRequestQueueListener {
         this.pdfService = pdfService;
     }
 
-   // @SqsListener("PDF_Request_Queue")
+    /*
+    * Listening PDF_Request_Queue from SNS
+    * Deal SNSRequest with Queue Listener
+    * */
+    @SqsListener("PDF_Request_Queue")
+    public void fanoutQueueListener(PDFSNSRequest request) {
+        log.info("Get fanout request: {}", request);
+        queueListener(request.getPdfRequest());
+    }
+
+    /*
+    * 1. Dealing with PDFRequest
+    * 2. Call create() and store
+    * 3. Transfer PDFObject to ResponseObject
+    * 4. Send ResponseObject to PDF_Response_Queue
+    * */
     public void queueListener(PDFRequest request) {
-//        log.info("Get request: {}", request);
         PDFFile file = null;
         PDFResponse response = new PDFResponse();
         response.setReqId(request.getReqId());
@@ -47,13 +61,9 @@ public class PDFRequestQueueListener {
         send(response);
         log.info("Replied back: {}", response);
     }
-
-    @SqsListener("PDF_Request_Queue")
-    public void fanoutQueueListener(PDFSNSRequest request) {
-        log.info("Get fanout request: {}", request);
-        queueListener(request.getPdfRequest());
-    }
-
+    /*
+    * Send back the message to PDF_Response_Queue
+    * */
     private void send(Object message) {
         queueMessagingTemplate.convertAndSend("PDF_Response_Queue", message);
     }

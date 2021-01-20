@@ -50,7 +50,12 @@ public class ReportServiceImpl implements ReportService {
         this.emailService = emailService;
         this.restTemplate = restTemplate;
     }
-
+    /*
+    * 1. ReportRequest transfer to ReportRequestEntity
+    * 2. Create PDFReportEntity and ExcelReportEntity
+    * 3. Set-up ReportRequestEntity
+    * 4. Persist
+    * */
     private ReportRequestEntity persistToLocal(ReportRequest request) {
         request.setReqId("Req-"+ UUID.randomUUID().toString());
 
@@ -81,7 +86,6 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private void sendDirectRequests(ReportRequest request) {
-//        RestTemplate rs = new RestTemplate();
         ExcelResponse excelResponse = new ExcelResponse();
         PDFResponse pdfResponse = new PDFResponse();
         try {
@@ -93,6 +97,7 @@ public class ReportServiceImpl implements ReportService {
         } finally {
             updateLocal(excelResponse);
         }
+
         try {
             pdfResponse = restTemplate.postForEntity("http://PDFSERVICE/pdf", request, PDFResponse.class).getBody();
         } catch(Exception e){
@@ -114,7 +119,9 @@ public class ReportServiceImpl implements ReportService {
         BeanUtils.copyProperties(pdfResponse, response);
         updateAsyncPDFReport(response);
     }
-
+    /*
+    * Send a notification to SNS
+    * */
     @Override
     @Transactional
     public ReportVO generateReportsAsync(ReportRequest request) {
@@ -179,22 +186,25 @@ public class ReportServiceImpl implements ReportService {
             String key = fileLocation.split("/")[1];
             return s3Client.getObject(bucket, key).getObjectContent();
         } else if (type == FileType.EXCEL) {
-            String fileId = entity.getExcelReport().getFileId();
+//            String fileId = entity.getExcelReport().getFileId();
             String fileLocation = entity.getExcelReport().getFileLocation();
+            String bucket = fileLocation.split("/")[0];
+            String key = fileLocation.split("/")[1];
+            return s3Client.getObject(bucket, key).getObjectContent();
 //            try {
 //                return new FileInputStream(fileLocation);// this location is in local, definitely sucks
 //            } catch (FileNotFoundException e) {
 //                log.error("No file found", e);
 //            }
-            RestTemplate restTemplate = new RestTemplate();
-//            InputStream is = restTemplate.execute(, HttpMethod.GET, null, ClientHttpResponse::getBody, fileId);
-            ResponseEntity<Resource> exchange = restTemplate.exchange("http://localhost:8888/excel/{id}/content",
-                    HttpMethod.GET, null, Resource.class, fileId);
-            try {
-                return exchange.getBody().getInputStream();
-            } catch (IOException e) {
-                log.error("Cannot download excel",e);
-            }
+//            RestTemplate restTemplate = new RestTemplate();
+////            InputStream is = restTemplate.execute(, HttpMethod.GET, null, ClientHttpResponse::getBody, fileId);
+//            ResponseEntity<Resource> exchange = restTemplate.exchange("http://localhost:8888/excel/{id}/content",
+//                    HttpMethod.GET, null, Resource.class, fileId);
+//            try {
+//                return exchange.getBody().getInputStream();
+//            } catch (IOException e) {
+//                log.error("Cannot download excel",e);
+//            }
         }
         return null;
     }
