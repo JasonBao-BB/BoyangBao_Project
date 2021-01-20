@@ -1,0 +1,6 @@
+# Project exclude paths
+/AuthorizationServer/target/
+/ClientService/target/
+/EurekaServer/target/
+/ExcelService/target/
+/PDFService/target/
