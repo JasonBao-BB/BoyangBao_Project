@@ -74,7 +74,19 @@ public class ReportController {
     }
 
 //   @DeleteMapping
+    @DeleteMapping("/report/sync/{reqId}/{type}")
+    public ResponseEntity<GeneralResponse> deleteFile(@PathVariable("reqId") String reqId, @PathVariable("type") FileType type){
+
+        return new ResponseEntity<>(new GeneralResponse(reportService.deleteReportByReqId(reqId, type)),HttpStatus.OK);
+    }
+
 //   @PutMapping
+    @PutMapping("/report/sync/{reqId}/{type}")
+    public ResponseEntity<GeneralResponse> updateFile(@PathVariable("reqId") String reqId,
+                                                      @PathVariable("type") FileType type,
+                                                      @RequestBody @Validated ReportRequest request) {
+        return new ResponseEntity<>(new GeneralResponse(reportService.updateReportByReqId(reqId, type, request)), HttpStatus.OK);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<GeneralResponse> handleValidationException(MethodArgumentNotValidException e) {

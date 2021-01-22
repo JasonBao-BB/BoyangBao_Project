@@ -78,12 +78,14 @@ public class ReportServiceImpl implements ReportService {
         return reportRequestRepo.save(entity);
     }
 
+
     @Override
     public ReportVO generateReportsSync(ReportRequest request) {
         persistToLocal(request);
         sendDirectRequests(request);
         return new ReportVO(reportRequestRepo.findById(request.getReqId()).orElseThrow());
     }
+
 
     private void sendDirectRequests(ReportRequest request) {
         ExcelResponse excelResponse = new ExcelResponse();
@@ -191,21 +193,40 @@ public class ReportServiceImpl implements ReportService {
             String bucket = fileLocation.split("/")[0];
             String key = fileLocation.split("/")[1];
             return s3Client.getObject(bucket, key).getObjectContent();
-//            try {
-//                return new FileInputStream(fileLocation);// this location is in local, definitely sucks
-//            } catch (FileNotFoundException e) {
-//                log.error("No file found", e);
-//            }
-//            RestTemplate restTemplate = new RestTemplate();
-////            InputStream is = restTemplate.execute(, HttpMethod.GET, null, ClientHttpResponse::getBody, fileId);
-//            ResponseEntity<Resource> exchange = restTemplate.exchange("http://localhost:8888/excel/{id}/content",
-//                    HttpMethod.GET, null, Resource.class, fileId);
-//            try {
-//                return exchange.getBody().getInputStream();
-//            } catch (IOException e) {
-//                log.error("Cannot download excel",e);
-//            }
         }
+        return null;
+    }
+
+    @Override
+    public ReportVO updateReportByReqId(String reqId, FileType type, ReportRequest request) {
+        ReportRequestEntity entity = reportRequestRepo.findById(reqId).orElseThrow(RequestNotFoundException::new);
+
+        entity.setDescription(request.getDescription());
+        entity.setSubmitter(request.getSubmitter());
+        entity.setUpdatedTime(LocalDateTime.now());
+
+        restTemplate.put("http://EXCELSERVICE/excel/reqId", request);
+        restTemplate.put("http://PDFSERVICE/pdf/reqId", request);
+
+        ExcelResponse excelResponse = restTemplate.getForEntity("http://EXCELSERVICE/excel/reqId", ExcelResponse.class).getBody();
+        PDFResponse pdfResponse = restTemplate.getForEntity("http://PDFSERVICE/pdf/reqId", PDFResponse.class).getBody();
+
+        ExcelReportEntity excelReportEntity = entity.getExcelReport();
+        PDFReportEntity pdfReportEntity = entity.getPdfReport();
+
+        BeanUtils.copyProperties(excelResponse, excelReportEntity);
+        BeanUtils.copyProperties(pdfResponse, pdfReportEntity);
+
+        entity.setPdfReport(pdfReportEntity);
+        entity.setExcelReport(excelReportEntity);
+
+        reportRequestRepo.save(entity);
+
+        return new ReportVO(entity);
+    }
+
+    @Override
+    public ReportVO deleteReportByReqId(String reqId, FileType type) {
         return null;
     }
 }

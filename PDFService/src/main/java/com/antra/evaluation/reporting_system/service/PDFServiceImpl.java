@@ -59,13 +59,12 @@ public class PDFServiceImpl implements PDFService {
         * Open it as an object and set meta-data
         * */
         PDFFile generatedFile= generator.generate(request);
-        //先使用File把东西存到S3上面
+
         File temp = new File(generatedFile.getFileLocation());
         log.debug("Upload temp file to s3 {}", generatedFile.getFileLocation());
         s3Client.putObject(s3Bucket,file.getId(),temp);
         log.debug("Uploaded");
 
-        //在这里把FileLocation变成了S3
         file.setFileLocation(String.join("/",s3Bucket,file.getId()));
         System.out.println("PDF_经过更改后的FileLocation:"+file.getFileLocation());
 

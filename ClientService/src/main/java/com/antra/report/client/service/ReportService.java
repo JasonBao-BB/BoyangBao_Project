@@ -20,4 +20,8 @@ public interface ReportService {
     List<ReportVO> getReportList();
 
     InputStream getFileBodyByReqId(String reqId, FileType type);
+
+    ReportVO updateReportByReqId(String reqId, FileType type, ReportRequest request);
+
+    ReportVO deleteReportByReqId(String reqId, FileType type);
 }
